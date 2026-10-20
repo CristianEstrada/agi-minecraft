@@ -1,8 +1,12 @@
-# AGI in Minecraft
+# Minecraft LLM Director
+
+Experimental Python tool-calling agent for a Minecraft server. The repository name is aspirational: this prototype implements a bounded command-execution loop, not general intelligence.
+
+The current implementation includes an RCON client, configurable blocked commands, an interactive CLI, and regression tests with a fake server and mocked model responses.
 
 Agente "director" que controla NPCs y el rumbo del metagame de un servidor de Minecraft (NeoForge 1.21.1).
 
-Funciona con cualquier modelo (Claude, GPT, Gemini, modelos locales con Ollama, etc.) gracias a [LiteLLM](https://docs.litellm.ai/): se cambia el modelo con una variable de entorno, sin tocar código.
+Se integra con proveedores de modelos (Claude, GPT, Gemini, modelos locales con Ollama, etc.) compatibles con tool calling gracias a [LiteLLM](https://docs.litellm.ai/): se cambia el modelo con una variable de entorno, sin tocar código.
 
 ## Cómo funciona
 
@@ -35,5 +39,9 @@ La configuración del servidor (RCON, Easy NPC) está en [docs/SETUP.md](docs/SE
 
 ```bash
 pip install -r requirements-dev.txt
-pytest
+python -m pytest -q
 ```
+
+The tests exercise RCON authentication/command round trips, command blocking, and an agent tool-call cycle. They use a local fake server and mock model responses; no model API credentials or Minecraft instance are required for the test suite.
+
+[Python tests](https://github.com/CristianEstrada/agi-minecraft/actions/workflows/tests.yml) runs the existing regression suite for pushes and pull requests. See the latest workflow run for verification; live Minecraft/LLM integration is a separate check.
