@@ -136,3 +136,20 @@ def test_listen_parses_log_lines():
     assert addressed_npc("Bob, ¿qué vendes?", ["Bob"]) == "Bob"
     assert addressed_npc("bobina de cobre", ["Bob"]) is None
     assert addressed_npc("hey director", ["Bob"]) == "director"
+
+
+def test_npc_profiles_and_prompt(tmp_path):
+    from collections import deque
+
+    from director import npcs
+    from director.listen import build_prompt
+
+    f = tmp_path / "npcs.yaml"
+    f.write_text("Bob:\n  rol: Mercader\n  personalidad: >\n    Astuto y\n    amable\n", encoding="utf-8")
+    profiles = npcs.load(str(f))
+    assert npcs.describe("Bob", profiles["Bob"]) == "Ficha del NPC Bob:\n- Rol: Mercader\n- Personalidad: Astuto y amable"
+    memory = {"Bob": deque(["<Steve> hola", "Bob: ¡Bienvenido!"])}
+    prompt = build_prompt("chat", "Steve", "Bob, ¿qué vendes?", "Bob", [], profiles, memory)
+    assert "Personalidad: Astuto y amable" in prompt
+    assert "Bob: ¡Bienvenido!" in prompt
+    assert npcs.load(str(tmp_path / "missing.yaml")) == {}

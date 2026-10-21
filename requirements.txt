@@ -2,3 +2,4 @@ litellm>=1.70
 # litellm 1.106.x imports `mcp` on every completion() call but doesn't declare it.
 mcp>=1.0
 python-dotenv>=1.0
+pyyaml>=6.0

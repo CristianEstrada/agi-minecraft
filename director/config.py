@@ -16,6 +16,7 @@ def load() -> dict:
         "model": os.getenv("MODEL", "anthropic/claude-sonnet-5-5"),
         "max_steps": int(os.getenv("MAX_STEPS", "12")),
         "log_path": os.getenv("LOG_PATH", "../server/logs/latest.log"),
+        "npc_file": os.getenv("NPC_FILE", "npcs.yaml"),
         "npc_names": [n.strip() for n in os.getenv("NPC_NAMES", "").split(",") if n.strip()],
         "greet_joins": os.getenv("GREET_JOINS", "false").lower() == "true",
     }

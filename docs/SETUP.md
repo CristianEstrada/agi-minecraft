@@ -69,7 +69,7 @@ El agente consulta `help easy_npc` para aprender la sintaxis antes de usarla.
 El agente puede leer el log del servidor en vivo y responder cuando un jugador le habla a un NPC en el chat.
 
 1. Ponle nombre al NPC (por ejemplo con `python -m director "ponle Bob al NPC más cercano a TU_NICK"`).
-2. En `.env`, agrega su nombre a `NPC_NAMES` (por ejemplo `NPC_NAMES=Bob,Ana`).
+2. Crea su ficha de personalidad: `cp npcs.example.yaml npcs.yaml` y edítalo. Cada NPC tiene `rol`, `personalidad`, `sabe` y `reglas`, y la clave debe ser exactamente su nombre en el juego. Cada NPC responde con su ficha y recuerda sus últimas conversaciones mientras la escucha está activa.
 3. Comprueba que tu usuario puede leer el log: `tail -1 ../server/logs/latest.log`. Si da `Permission denied`, dale lectura: `sudo setfacl -R -m u:$USER:rX ~/minecraft/server/logs && sudo setfacl -d -m u:$USER:rX ~/minecraft/server/logs`.
 4. Arranca la escucha (déjala en `tmux` para que siga al cerrar SSH):
    ```bash
