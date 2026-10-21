@@ -93,3 +93,13 @@ def test_agent_runs_tool_then_answers(monkeypatch):
     assert agent.ask("¿quién está conectado?") == "Hay 0 jugadores."
     assert ran == ["list"]
     assert agent.messages[-2]["role"] == "tool"
+
+
+def test_blocked_prefixes_and_execute_run():
+    rcon = SimpleNamespace(command=lambda c: "ok")
+    runner = ToolRunner(rcon, ["kill", "easy_npc test"])
+    assert runner.is_blocked("easy_npc test spawn standard_npc")
+    assert runner.is_blocked("execute as Steve run easy_npc  test spawn x")
+    assert runner.is_blocked("execute positioned 0 64 0 run kill @e")
+    assert not runner.is_blocked("easy_npc name set abc Bob")
+    assert not runner.is_blocked("help easy_npc test")

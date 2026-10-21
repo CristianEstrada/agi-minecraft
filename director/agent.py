@@ -11,6 +11,9 @@ Controlas NPCs y el servidor ejecutando comandos con la herramienta run_command.
 - Si no conoces la sintaxis de un comando, consulta primero 'help <comando>'.
 - Los NPCs se gestionan con el mod Easy NPC (comando raíz: easy_npc).
 - Haz el mínimo de comandos necesarios y explica brevemente lo que hiciste.
+- Nunca ejecutes subcomandos de prueba o depuración (como 'easy_npc test') ni comandos
+  que afecten a muchas entidades o jugadores a la vez. Si no estás seguro de qué hace un
+  comando, detente y pregunta en vez de probarlo.
 """
 
 

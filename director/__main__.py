@@ -18,7 +18,7 @@ def main() -> None:
         os.environ["RCON_PASSWORD"],
     )
     rcon.connect()
-    blocked = os.getenv("BLOCKED_COMMANDS", "stop,op,deop,ban,ban-ip,pardon,whitelist,save-off").split(",")
+    blocked = os.getenv("BLOCKED_COMMANDS", "stop,op,deop,ban,ban-ip,pardon,whitelist,save-off,kill,easy_npc test").split(",")
     agent = Agent(
         model=os.getenv("MODEL", "anthropic/claude-sonnet-5-5"),
         tools=ToolRunner(rcon, blocked),

@@ -32,8 +32,16 @@ class ToolRunner:
         self.blocked = [b.strip().lower() for b in blocked if b.strip()]
 
     def is_blocked(self, command: str) -> bool:
-        root = command.strip().lstrip("/").split(" ", 1)[0].lower()
-        return root in self.blocked
+        """An entry blocks every command starting with it ("stop", "easy_npc test").
+        Commands nested in `execute ... run <cmd>` are checked too."""
+        words = command.strip().lstrip("/").lower().split()
+        candidates = [words] + [words[i + 1 :] for i, w in enumerate(words) if w == "run"]
+        for cmd in candidates:
+            for entry in self.blocked:
+                prefix = entry.split()
+                if cmd[: len(prefix)] == prefix:
+                    return True
+        return False
 
     def run(self, name: str, arguments: str) -> str:
         try:
@@ -46,6 +54,6 @@ class ToolRunner:
         if not command:
             return "error: empty command"
         if self.is_blocked(command):
-            return f"error: command '{command.split(' ', 1)[0]}' is blocked by BLOCKED_COMMANDS"
+            return f"error: command '{command}' is blocked by BLOCKED_COMMANDS"
         output = self.rcon.command(command)
         return output or "(no output)"
