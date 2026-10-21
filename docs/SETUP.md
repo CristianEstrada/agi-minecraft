@@ -26,7 +26,7 @@ Arranca el servidor. En el log debe aparecer `RCON running on 0.0.0.0:25575`.
 
 ## 3. Configurar el agente
 
-Necesitas Python 3.11 o superior.
+Necesitas Python 3.11 o superior. En Ubuntu/Debian instala también el módulo de entornos virtuales (`sudo apt install python3-venv`; en Ubuntu 24.04 es `python3.12-venv`), o `python3 -m venv` fallará.
 
 ```bash
 git clone https://github.com/CristianEstrada/agi-minecraft.git
@@ -66,6 +66,7 @@ El agente consulta `help easy_npc` para aprender la sintaxis antes de usarla.
 
 ## Problemas comunes
 
+- **`ensurepip is not available` / `externally-managed-environment` / `python: command not found`**: falta `python3-venv`. Instálalo, borra `.venv`, créalo de nuevo y actívalo con `source .venv/bin/activate`.
 - **`Connection refused`**: RCON no está activo, el puerto es otro o un firewall lo bloquea.
 - **`RCON authentication failed`**: la contraseña de `.env` no coincide con `rcon.password`.
 - **El modelo no ejecuta comandos**: el modelo elegido no soporta tool calling; prueba con otro.
