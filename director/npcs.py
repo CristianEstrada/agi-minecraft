@@ -4,7 +4,13 @@ import os
 
 import yaml
 
-FIELDS = [("rol", "Rol"), ("personalidad", "Personalidad"), ("sabe", "Sabe"), ("reglas", "Reglas")]
+FIELDS = [
+    ("rol", "Rol"),
+    ("personalidad", "Personalidad"),
+    ("sabe", "Sabe"),
+    ("vende", "Vende (precio en monedas)"),
+    ("reglas", "Reglas"),
+]
 
 
 def load(path: str) -> dict[str, dict]:

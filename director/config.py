@@ -4,10 +4,11 @@ import os
 
 from dotenv import load_dotenv
 
+from .economy import Economy
 from .rcon import RconClient
 from .tools import ToolRunner
 
-DEFAULT_BLOCKED = "stop,op,deop,ban,ban-ip,pardon,whitelist,save-off,kill,easy_npc test"
+DEFAULT_BLOCKED = "stop,op,deop,ban,ban-ip,pardon,whitelist,save-off,kill,easy_npc test,scoreboard players"
 
 
 def load() -> dict:
@@ -30,4 +31,14 @@ def connect_runner() -> ToolRunner:
         os.environ["RCON_PASSWORD"],
     )
     rcon.connect()
-    return ToolRunner(rcon, os.getenv("BLOCKED_COMMANDS", DEFAULT_BLOCKED).split(","))
+    economy = None
+    if os.getenv("ECONOMY_ENABLED", "true").lower() == "true":
+        economy = Economy(
+            rcon,
+            objective=os.getenv("ECONOMY_OBJECTIVE", "monedas"),
+            ledger_path=os.getenv("ECONOMY_LEDGER", "data/ledger.jsonl"),
+            max_tx=int(os.getenv("ECONOMY_MAX_TX", "500")),
+            daily_payout=int(os.getenv("ECONOMY_DAILY_PAYOUT", "2000")),
+        )
+        economy.setup()
+    return ToolRunner(rcon, os.getenv("BLOCKED_COMMANDS", DEFAULT_BLOCKED).split(","), economy)

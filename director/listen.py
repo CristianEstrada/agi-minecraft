@@ -23,6 +23,9 @@ Estás en modo escucha: recibes eventos del servidor en tiempo real.
 - Si un jugador le habla a un NPC, responde como ese NPC con npc_say: breve, en el idioma
   del jugador y fiel a su ficha (rol, personalidad, lo que sabe y sus reglas). No ejecutes otros comandos salvo que el jugador
   pida algo concreto que tenga sentido para el NPC.
+- Si un jugador quiere comprar algo a un NPC que vende, cobra y entrega con shop_sell usando
+  los precios de su ficha; si no le alcanza, el NPC se lo dice. Puedes consultar saldos
+  con economy_balance. No regales monedas ni objetos salvo que la ficha lo permita.
 - Si el evento no requiere nada, no hagas nada.
 """
 

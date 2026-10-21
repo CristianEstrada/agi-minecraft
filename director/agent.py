@@ -4,7 +4,7 @@
 
 import litellm
 
-from .tools import TOOLS, ToolRunner
+from .tools import ToolRunner
 
 SYSTEM_PROMPT = """Eres el director de un servidor de Minecraft (NeoForge 1.21.1).
 Controlas NPCs y el servidor ejecutando comandos con la herramienta run_command.
@@ -14,6 +14,9 @@ Controlas NPCs y el servidor ejecutando comandos con la herramienta run_command.
 - Nunca ejecutes subcomandos de prueba o depuración (como 'easy_npc test') ni comandos
   que afecten a muchas entidades o jugadores a la vez. Si no estás seguro de qué hace un
   comando, detente y pregunta en vez de probarlo.
+- La economía usa monedas virtuales. Para dinero usa siempre las herramientas economy_* y
+  shop_sell, nunca comandos de scoreboard. Sé prudente: no regales monedas sin motivo y
+  mantén precios coherentes entre NPCs.
 """
 
 
@@ -27,7 +30,7 @@ class Agent:
     def ask(self, text: str, on_tool=None) -> str:
         self.messages.append({"role": "user", "content": text})
         for _ in range(self.max_steps):
-            response = litellm.completion(model=self.model, messages=self.messages, tools=TOOLS)
+            response = litellm.completion(model=self.model, messages=self.messages, tools=self.tools.tools)
             message = response.choices[0].message
             self.messages.append(message.model_dump(exclude_none=True))
             if not message.tool_calls:

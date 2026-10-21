@@ -41,18 +41,30 @@ Consejos para escribir fichas:
 - Usa `reglas` para lo que nunca debe pasar (regalar objetos, revelar secretos).
 - Los NPCs pueden conocerse entre sí: menciónalo en `sabe` ("Bob es mi hermano y no le confío nada").
 
-## Economía (fase 2, plan)
+## Economía (fase 2)
 
-El director no inventa la economía: la **administra** usando el mod de economía que tenga el servidor.
+Monedas virtuales en un scoreboard (`monedas`). No requiere mods y el director controla todo por RCON.
 
-1. **Identificar el mod**. En la VPS:
-   ```bash
-   ls ~/minecraft/server/mods | grep -iE "econ|currency|coin|money|numismatic|shop|trade"
-   ```
-   Según el resultado se definen los comandos que el director puede usar (consultar saldo, pagar, cobrar, precios de tienda).
-2. **Herramientas acotadas**: en vez de dejarle `run_command` libre para el dinero, se agregan herramientas específicas (`economy_balance`, `economy_pay`, `set_price`) con límites en código: monto máximo por transacción y por jugador al día.
-3. **Estado persistente**: un archivo o base SQLite con precios, historial de transacciones y la "salud" de la economía (dinero en circulación, inflación). El director lo lee para decidir.
-4. **Política**: el director revisa la economía cada cierto tiempo y ajusta precios o recompensas para mantenerla equilibrada. Los NPCs mercaderes usan esos precios al negociar.
+**Herramientas del director**
+- `economy_balance`: saldo de un jugador.
+- `economy_pay`: el director paga (recompensas, comprarle algo al jugador).
+- `economy_charge`: cobra un servicio. Falla si al jugador no le alcanza.
+- `shop_sell`: cobra y entrega un objeto; si el objeto no existe, devuelve el dinero.
+- `economy_report`: monedas emitidas, cobradas, en circulación y últimos movimientos.
+
+**Límites en código** (no dependen de que el modelo obedezca), en `.env`:
+- `ECONOMY_MAX_TX`: máximo por transacción (500 por defecto).
+- `ECONOMY_DAILY_PAYOUT`: máximo que el director puede pagarle a un jugador por día (2000).
+- Solo nombres de jugador exactos: nada de `@a` ni selectores.
+- `scoreboard players` está bloqueado en `run_command`, así que el dinero solo se mueve con estas herramientas.
+
+Todo movimiento queda en `data/ledger.jsonl`.
+
+**Mercaderes**: en `npcs.yaml` agrega `vende` con objetos y precios. Cuando un jugador le pida comprar, el NPC cobra y entrega con `shop_sell`.
+
+**Para los admins**: ver el saldo de todos en pantalla con `scoreboard objectives setdisplay sidebar monedas` (desde `python -m director.console`).
+
+**Siguiente paso**: que el director revise `economy_report` periódicamente y ajuste precios y recompensas (va junto con el reloj de eventos).
 
 ## Eventos (fase 3, plan)
 

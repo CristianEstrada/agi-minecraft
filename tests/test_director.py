@@ -153,3 +153,76 @@ def test_npc_profiles_and_prompt(tmp_path):
     assert "Personalidad: Astuto y amable" in prompt
     assert "Bob: ¡Bienvenido!" in prompt
     assert npcs.load(str(tmp_path / "missing.yaml")) == {}
+
+
+class FakeScoreboard:
+    """Minimal fake of the scoreboard and give commands over RCON."""
+
+    def __init__(self, give_ok=True):
+        self.scores = {}
+        self.give_ok = give_ok
+        self.sent = []
+
+    def command(self, c):
+        self.sent.append(c)
+        parts = c.split()
+        if parts[:2] == ["scoreboard", "players"]:
+            op, player, amount = parts[2], parts[3], parts[5] if len(parts) > 5 else "0"
+            if op == "get":
+                if player not in self.scores:
+                    return f"Can't get value of monedas for {player}; none is set"
+                return f"{player} has {self.scores[player]} [Monedas]"
+            sign = 1 if op == "add" else -1
+            self.scores[player] = self.scores.get(player, 0) + sign * int(amount)
+            return "ok"
+        if parts[0] == "give":
+            return f"Gave {parts[3]} [{parts[2]}] to {parts[1]}" if self.give_ok else "Unknown item"
+        return ""
+
+
+def _economy(tmp_path, fake, **kw):
+    from director.economy import Economy
+
+    return Economy(fake, "monedas", str(tmp_path / "ledger.jsonl"), kw.get("max_tx", 500), kw.get("daily", 1000))
+
+
+def test_economy_pay_charge_and_limits(tmp_path):
+    from director.economy import EconomyError
+
+    fake = FakeScoreboard()
+    eco = _economy(tmp_path, fake, daily=600)
+    assert eco.balance("Steve") == 0
+    assert eco.pay("Steve", 400, "quest") == 400
+    with pytest.raises(EconomyError, match="daily payout"):
+        eco.pay("Steve", 300, "again")
+    with pytest.raises(EconomyError, match="between 1 and 500"):
+        eco.pay("Alex", 501, "too much")
+    with pytest.raises(EconomyError, match="invalid player"):
+        eco.pay("@a", 10, "everyone")
+    assert eco.charge("Steve", 100, "fee") == 300
+    with pytest.raises(EconomyError, match="has 300 coins"):
+        eco.charge("Steve", 400, "too expensive")
+    report = eco.report()
+    assert report["net_in_circulation"] == 300
+
+
+def test_shop_sell_gives_item_or_refunds(tmp_path):
+    from director.economy import EconomyError
+
+    fake = FakeScoreboard()
+    eco = _economy(tmp_path, fake)
+    eco.pay("Steve", 100, "start")
+    assert "bought 2 minecraft:bread for 30; balance 70" in eco.sell_item("Steve", "minecraft:bread", 2, 30)
+    fake.give_ok = False
+    with pytest.raises(EconomyError, match="refunded"):
+        eco.sell_item("Steve", "minecraft:nope", 1, 50)
+    assert eco.balance("Steve") == 70
+
+
+def test_economy_tools_via_runner(tmp_path):
+    fake = FakeScoreboard()
+    runner = ToolRunner(fake, ["scoreboard players"], _economy(tmp_path, fake))
+    assert {"economy_pay", "shop_sell"} <= {t["function"]["name"] for t in runner.tools}
+    assert runner.run("economy_pay", json.dumps({"player": "Steve", "amount": 50, "reason": "x"})) == "paid 50 to Steve; balance 50"
+    assert "error" in runner.run("economy_pay", json.dumps({"player": "Steve", "amount": -5, "reason": "x"}))
+    assert "blocked" in runner.run("run_command", json.dumps({"command": "scoreboard players add Steve monedas 999"}))
