@@ -64,10 +64,26 @@ python -m director "crea un NPC llamado Bob en las coordenadas del spawn y haz q
 
 El agente consulta `help easy_npc` para aprender la sintaxis antes de usarla.
 
+## 5. Modo escucha: NPCs que conversan
+
+El agente puede leer el log del servidor en vivo y responder cuando un jugador le habla a un NPC en el chat.
+
+1. Ponle nombre al NPC (por ejemplo con `python -m director "ponle Bob al NPC más cercano a TU_NICK"`).
+2. En `.env`, agrega su nombre a `NPC_NAMES` (por ejemplo `NPC_NAMES=Bob,Ana`).
+3. Comprueba que tu usuario puede leer el log: `tail -1 ../server/logs/latest.log`. Si da `Permission denied`, dale lectura: `sudo setfacl -R -m u:$USER:rX ~/minecraft/server/logs && sudo setfacl -d -m u:$USER:rX ~/minecraft/server/logs`.
+4. Arranca la escucha (déjala en `tmux` para que siga al cerrar SSH):
+   ```bash
+   python -m director.listen
+   ```
+5. En el juego, escribe en el chat algo que mencione al NPC: `Bob, ¿qué vendes?`. Bob responderá en el chat de los jugadores cercanos.
+
+Escribir `director` en el chat también lo despierta. Cada mensaje dirigido a un NPC es una llamada al modelo; los demás mensajes no gastan tokens.
+
 ## Problemas comunes
 
 - **`ensurepip is not available` / `externally-managed-environment` / `python: command not found`**: falta `python3-venv`. Instálalo, borra `.venv`, créalo de nuevo y actívalo con `source .venv/bin/activate`.
 - **`Connection refused`**: RCON no está activo, el puerto es otro o un firewall lo bloquea.
 - **`RCON authentication failed`**: la contraseña de `.env` no coincide con `rcon.password`.
 - **El modelo no ejecuta comandos**: el modelo elegido no soporta tool calling; prueba con otro.
+- **`no NPC named 'Bob' is loaded`**: el nombre no coincide exactamente o no hay ningún jugador cerca (la zona no está cargada).
 - **`command 'x' is blocked`**: está en `BLOCKED_COMMANDS`; quítalo de la lista si de verdad quieres permitirlo.

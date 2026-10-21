@@ -103,3 +103,36 @@ def test_blocked_prefixes_and_execute_run():
     assert runner.is_blocked("execute positioned 0 64 0 run kill @e")
     assert not runner.is_blocked("easy_npc name set abc Bob")
     assert not runner.is_blocked("help easy_npc test")
+
+
+def test_npc_say_targets_named_npc():
+    sent = []
+
+    def command(c):
+        sent.append(c)
+        return "Test passed, count: 1" if c.startswith("execute if") else ""
+
+    runner = ToolRunner(SimpleNamespace(command=command), [])
+    out = runner.run("npc_say", json.dumps({"npc": "Bob Smith", "text": "Hola,  soy Bob"}))
+    assert out == "Bob Smith said: Hola, soy Bob"
+    assert sent[0] == 'execute if entity @e[type=!player,name="Bob Smith",limit=1]'
+    assert sent[1].startswith('execute at @e[type=!player,name="Bob Smith",limit=1] run tellraw @a[distance=..16] ')
+    assert json.loads(sent[1].split("..16] ", 1)[1])["text"] == "<Bob Smith> Hola, soy Bob"
+
+
+def test_npc_say_missing_npc():
+    runner = ToolRunner(SimpleNamespace(command=lambda c: "Test failed"), [])
+    assert "no NPC named 'Bob'" in runner.run("npc_say", json.dumps({"npc": "Bob", "text": "hi"}))
+
+
+def test_listen_parses_log_lines():
+    from director.listen import addressed_npc, parse
+
+    prefix = "[21Oct2026 02:57:49.123] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: "
+    assert parse(prefix + "<SUREGHOST12> Bob, ¿qué vendes?") == ("chat", "SUREGHOST12", "Bob, ¿qué vendes?")
+    assert parse(prefix + "SUREGHOST12 joined the game") == ("join", "SUREGHOST12", "")
+    assert parse(prefix + "SUREGHOST12 left the game") == ("leave", "SUREGHOST12", "")
+    assert parse(prefix + "Done (6.983s)! For help, type \"help\"") is None
+    assert addressed_npc("Bob, ¿qué vendes?", ["Bob"]) == "Bob"
+    assert addressed_npc("bobina de cobre", ["Bob"]) is None
+    assert addressed_npc("hey director", ["Bob"]) == "director"

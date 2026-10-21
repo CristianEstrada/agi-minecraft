@@ -23,7 +23,31 @@ TOOLS = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "npc_say",
+            "description": (
+                "Make an NPC speak: shows '<npc> text' in the chat of players near that NPC. "
+                "The NPC is found by its exact name (as set with 'easy_npc name set')."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "npc": {"type": "string", "description": "Exact name of the NPC, e.g. 'Bob'."},
+                    "text": {"type": "string", "description": "What the NPC says. One or two short sentences."},
+                    "radius": {"type": "integer", "description": "Blocks around the NPC that hear it. Default 16."},
+                },
+                "required": ["npc", "text"],
+            },
+        },
+    },
 ]
+
+
+def _selector_name(name: str) -> str:
+    """Quote a name for an entity selector so names with spaces work."""
+    return json.dumps(name)
 
 
 class ToolRunner:
@@ -48,12 +72,30 @@ class ToolRunner:
             args = json.loads(arguments or "{}")
         except json.JSONDecodeError:
             return "error: arguments are not valid JSON"
-        if name != "run_command":
-            return f"error: unknown tool {name}"
-        command = str(args.get("command", "")).strip().lstrip("/")
+        if name == "run_command":
+            return self.run_command(str(args.get("command", "")))
+        if name == "npc_say":
+            return self.npc_say(str(args.get("npc", "")), str(args.get("text", "")), args.get("radius"))
+        return f"error: unknown tool {name}"
+
+    def run_command(self, command: str) -> str:
+        command = command.strip().lstrip("/")
         if not command:
             return "error: empty command"
         if self.is_blocked(command):
             return f"error: command '{command}' is blocked by BLOCKED_COMMANDS"
         output = self.rcon.command(command)
         return output or "(no output)"
+
+    def npc_say(self, npc: str, text: str, radius=None) -> str:
+        npc, text = npc.strip(), " ".join(text.split())
+        if not npc or not text:
+            return "error: npc and text are required"
+        radius = max(1, min(int(radius or 16), 128))
+        target = f"@e[type=!player,name={_selector_name(npc)},limit=1]"
+        found = self.rcon.command(f"execute if entity {target}")
+        if "passed" not in found.lower():
+            return f"error: no NPC named '{npc}' is loaded (is a player nearby?)"
+        message = json.dumps({"text": f"<{npc}> {text}", "color": "yellow"})
+        self.rcon.command(f"execute at {target} run tellraw @a[distance=..{radius}] {message}")
+        return f"{npc} said: {text}"
