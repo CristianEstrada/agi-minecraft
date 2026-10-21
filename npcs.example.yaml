@@ -6,7 +6,7 @@
 #   rol:          qué hace en el mundo
 #   personalidad: cómo habla y se comporta
 #   sabe:         lo que conoce del mundo, del servidor o de otros NPCs
-#   vende:        lista de objetos (id de Minecraft) y precio en monedas
+#   vende:        objetos y precios (solo se usa con la economía activada; hoy en pausa)
 #   reglas:       límites que nunca debe romper
 
 Bob:

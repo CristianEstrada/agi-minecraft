@@ -8,7 +8,7 @@ from .economy import Economy
 from .rcon import RconClient
 from .tools import ToolRunner
 
-DEFAULT_BLOCKED = "stop,op,deop,ban,ban-ip,pardon,whitelist,save-off,kill,easy_npc test,scoreboard players"
+DEFAULT_BLOCKED = "stop,op,deop,ban,ban-ip,pardon,whitelist,save-off,kill,easy_npc test"
 
 
 def load() -> dict:
@@ -31,8 +31,11 @@ def connect_runner() -> ToolRunner:
         os.environ["RCON_PASSWORD"],
     )
     rcon.connect()
+    blocked = os.getenv("BLOCKED_COMMANDS", DEFAULT_BLOCKED).split(",")
     economy = None
-    if os.getenv("ECONOMY_ENABLED", "true").lower() == "true":
+    if os.getenv("ECONOMY_ENABLED", "false").lower() == "true":
+        # Coins may only move through the economy tools, which enforce limits.
+        blocked.append("scoreboard players")
         economy = Economy(
             rcon,
             objective=os.getenv("ECONOMY_OBJECTIVE", "monedas"),
@@ -41,4 +44,4 @@ def connect_runner() -> ToolRunner:
             daily_payout=int(os.getenv("ECONOMY_DAILY_PAYOUT", "2000")),
         )
         economy.setup()
-    return ToolRunner(rcon, os.getenv("BLOCKED_COMMANDS", DEFAULT_BLOCKED).split(","), economy)
+    return ToolRunner(rcon, blocked, economy)

@@ -14,9 +14,12 @@ Controlas NPCs y el servidor ejecutando comandos con la herramienta run_command.
 - Nunca ejecutes subcomandos de prueba o depuración (como 'easy_npc test') ni comandos
   que afecten a muchas entidades o jugadores a la vez. Si no estás seguro de qué hace un
   comando, detente y pregunta en vez de probarlo.
-- La economía usa monedas virtuales. Para dinero usa siempre las herramientas economy_* y
+"""
+
+ECONOMY_PROMPT = """- La economía usa monedas virtuales. Para dinero usa siempre las herramientas economy_* y
   shop_sell, nunca comandos de scoreboard. Sé prudente: no regales monedas sin motivo y
-  mantén precios coherentes entre NPCs.
+  mantén precios coherentes entre NPCs. Si un jugador quiere comprar a un NPC que vende,
+  cobra y entrega con shop_sell usando los precios de su ficha.
 """
 
 
@@ -25,6 +28,8 @@ class Agent:
         self.model = model
         self.tools = tools
         self.max_steps = max_steps
+        if tools.economy:
+            system_prompt += ECONOMY_PROMPT
         self.messages: list[dict] = [{"role": "system", "content": system_prompt}]
 
     def ask(self, text: str, on_tool=None) -> str:
