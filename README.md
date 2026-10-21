@@ -26,7 +26,7 @@ python -m director "crea un NPC llamado Bob junto al spawn"
 python -m director     # modo interactivo
 ```
 
-La configuración del servidor (RCON, Easy NPC) está en [docs/SETUP.md](docs/SETUP.md).
+La configuración del servidor (RCON, Easy NPC) está en [docs/SETUP.md](docs/SETUP.md). La arquitectura, las personalidades de NPCs y el plan de economía y eventos están en [docs/GUIA.md](docs/GUIA.md).
 
 ## Roadmap
 
