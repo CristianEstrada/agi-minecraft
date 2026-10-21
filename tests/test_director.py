@@ -226,3 +226,26 @@ def test_economy_tools_via_runner(tmp_path):
     assert runner.run("economy_pay", json.dumps({"player": "Steve", "amount": 50, "reason": "x"})) == "paid 50 to Steve; balance 50"
     assert "error" in runner.run("economy_pay", json.dumps({"player": "Steve", "amount": -5, "reason": "x"}))
     assert "blocked" in runner.run("run_command", json.dumps({"command": "scoreboard players add Steve monedas 999"}))
+
+
+def test_npc_spawn_near():
+    sent = []
+
+    def command(c):
+        sent.append(c)
+        if c.startswith("execute if entity @a[name=Luminux15"):
+            return "Test passed, count: 1"
+        if c.startswith("execute if entity @e"):
+            return "Test failed"
+        if " summon " in c:
+            return "Summoned new Kira"
+        return ""
+
+    runner = ToolRunner(SimpleNamespace(command=command), [])
+    out = runner.run("npc_spawn_near", json.dumps({"player": "Luminux15", "name": "Kira"}))
+    assert out == "spawned easy_npc:humanoid named 'Kira' 2 blocks in front of Luminux15"
+    assert sent[-1] == (
+        "execute at Luminux15 rotated as Luminux15 run summon easy_npc:humanoid ^ ^ ^2 "
+        '{CustomName:"{\\"text\\": \\"Kira\\"}",CustomNameVisible:1b,PersistenceRequired:1b}'
+    )
+    assert "invalid player" in runner.run("npc_spawn_near", json.dumps({"player": "@a", "name": "Kira"}))

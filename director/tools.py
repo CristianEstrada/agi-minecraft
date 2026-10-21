@@ -2,6 +2,7 @@
 translates for every provider (Anthropic, Gemini, Ollama, ...)."""
 
 import json
+import re
 
 from .economy import Economy, EconomyError
 from .rcon import RconClient
@@ -40,6 +41,29 @@ TOOLS = [
                     "radius": {"type": "integer", "description": "Blocks around the NPC that hear it. Default 16."},
                 },
                 "required": ["npc", "text"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "npc_spawn_near",
+            "description": (
+                "Create a NEW NPC right next to an online player, with a visible name. "
+                "Use this to create NPCs; do not use 'easy_npc spawn' (it only respawns saved NPCs "
+                "at their old position). Fails if an NPC with that name is already loaded."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "player": {"type": "string", "description": "Exact name of an online player."},
+                    "name": {"type": "string", "description": "Name for the NPC, e.g. 'Kira'."},
+                    "type": {
+                        "type": "string",
+                        "description": "Entity type, default easy_npc:humanoid. Other Easy NPC types: easy_npc:fox, easy_npc:allay, ...",
+                    },
+                },
+                "required": ["player", "name"],
             },
         },
     },
@@ -94,6 +118,11 @@ ECONOMY_TOOLS = [
 ]
 
 
+PLAYER_NAME = re.compile(r"^[A-Za-z0-9_]{1,16}$")
+NPC_NAME = re.compile(r"^[\w ]{1,32}$")
+ENTITY_TYPE = re.compile(r"^[a-z0-9_.-]+:[a-z0-9_./-]+$")
+
+
 def _selector_name(name: str) -> str:
     """Quote a name for an entity selector so names with spaces work."""
     return json.dumps(name)
@@ -130,6 +159,10 @@ class ToolRunner:
             return self.run_command(str(args.get("command", "")))
         if name == "npc_say":
             return self.npc_say(str(args.get("npc", "")), str(args.get("text", "")), args.get("radius"))
+        if name == "npc_spawn_near":
+            return self.npc_spawn_near(
+                str(args.get("player", "")), str(args.get("name", "")), str(args.get("type") or "easy_npc:humanoid")
+            )
         if name.startswith(("economy_", "shop_")) and self.economy:
             try:
                 return self.run_economy(name, args)
@@ -175,3 +208,24 @@ class ToolRunner:
         message = json.dumps({"text": f"<{npc}> {text}", "color": "yellow"})
         self.rcon.command(f"execute at {target} run tellraw @a[distance=..{radius}] {message}")
         return f"{npc} said: {text}"
+
+    def npc_spawn_near(self, player: str, name: str, entity_type: str = "easy_npc:humanoid") -> str:
+        player, name, entity_type = player.strip(), " ".join(name.split()), entity_type.strip().lower()
+        if not PLAYER_NAME.match(player):
+            return f"error: invalid player name '{player}'"
+        if not NPC_NAME.match(name):
+            return "error: NPC name must be 1-32 letters, digits, spaces or _"
+        if not ENTITY_TYPE.match(entity_type) or entity_type == "minecraft:player":
+            return f"error: invalid entity type '{entity_type}'"
+        if "passed" not in self.rcon.command(f"execute if entity @a[name={player},limit=1]").lower():
+            return f"error: player '{player}' is not online"
+        if "passed" in self.rcon.command(f"execute if entity @e[type=!player,name={_selector_name(name)}]").lower():
+            return f"error: an NPC named '{name}' already exists nearby a player; use it or pick another name"
+        custom_name = json.dumps(json.dumps({"text": name}))  # NBT string holding a JSON text component
+        out = self.rcon.command(
+            f"execute at {player} rotated as {player} run summon {entity_type} ^ ^ ^2 "
+            f"{{CustomName:{custom_name},CustomNameVisible:1b,PersistenceRequired:1b}}"
+        )
+        if "summoned" not in out.lower():
+            return f"error: summon failed: {out.strip() or '(no output)'}"
+        return f"spawned {entity_type} named '{name}' 2 blocks in front of {player}"
